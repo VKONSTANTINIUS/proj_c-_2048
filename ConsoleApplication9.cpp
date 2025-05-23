@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <iomanip>
 #include <cstdlib>
 #include <ctime>
@@ -9,10 +9,23 @@ using namespace std;
 
 enum direction { DOWN = 80, UP = 72, LEFT = 75, RIGHT = 77, ENTER = 13 };
 
+const int MENU_SIZE = 3;
+const char* menuItems[MENU_SIZE] = {
+    "New Game",
+    "Save / Load",
+    "Exit"
+};
+
 const int BOX_SIZE = 4;
 const int WIN_COUNT = 2048;
 int board[BOX_SIZE][BOX_SIZE]{};
 int score = 0;
+
+void setCursorPos(int x, int y);
+void setColor(int color);
+void drawFrame(int x, int y, int width, int height, int color);
+void drawMenu(int selected);
+void menu_init();
  
 void set_board();
 void add_number();
@@ -26,49 +39,111 @@ bool is_full();
 bool is_won();
 bool no_move();
 
+void new_game();
+
 int main()
 {     
-    srand(time(0));
-    set_board();
-    draw_board();
-        
-    while (true) {
-               
-        if (is_won()) {
-            cout << "You won!\n";
-            break;
-        }
-
-        if (is_full() || no_move()) {
-            cout << "Game over!\n";
-            break;
-        }
-
-        int direct = _getch();
-
-        if (direct == 224)
-            direct = _getch();
-
-        if (direct == RIGHT) {
-            move_right();
-        }
-        else if (direct == LEFT) {
-            move_left();
-        }
-        else if (direct == UP) {
-            move_up();
-        }
-        else if (direct == DOWN) {
-            move_down();
-        }
-        
-    }
-
-    return 0;
+    
+    menu_init();
+   
 
 }
 
+void setCursorPos(int x, int y) {
+    COORD pos = { (SHORT)x, (SHORT)y };
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+}
 
+void setColor(int color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+}
+
+void drawFrame(int x, int y, int width, int height, int color) {
+    setColor(color);
+    for (int i = 0; i < width; i++) {
+        setCursorPos(x + i, y);
+        cout << char(196);
+        setCursorPos(x + i, y + height - 1);
+        cout << char(196);
+    }
+    for (int i = 0; i < height; i++) {
+        setCursorPos(x, y + i);
+        cout << char(179);
+        setCursorPos(x + width - 1, y + i);
+        cout << char(179);
+    }
+    // Кути
+    setCursorPos(x, y);                     cout << char(218);
+    setCursorPos(x + width - 1, y);         cout << char(191);
+    setCursorPos(x, y + height - 1);        cout << char(192);
+    setCursorPos(x + width - 1, y + height - 1); cout << char(217);
+    setColor(7);
+}
+
+void drawMenu(int selected) {
+    system("cls");
+
+    int startX = 30;
+    int startY = 10;
+    int width = 20;
+    int height = 3;
+
+    for (int i = 0; i < MENU_SIZE; i++) {
+        int x = startX;
+        int y = startY + i * height;
+
+        if (i == selected) {
+            drawFrame(x - 2, y - 1, width, height, 10); // зелена рамка
+            setColor(10);
+        }
+        else {
+            setColor(7);
+        }
+
+        setCursorPos(x, y);
+        cout << menuItems[i];
+    }
+
+    setColor(7);
+}
+
+void menu_init() {
+    int selected = 0;
+    bool running = true;
+
+    while (running) {
+        drawMenu(selected);
+
+        int key = _getch();
+        if (key == 0 || key == 224) {
+            key = _getch();
+            if (key == UP) {
+                selected = (selected - 1 + MENU_SIZE) % MENU_SIZE;
+            }
+            else if (key == DOWN) {
+                selected = (selected + 1) % MENU_SIZE;
+            }
+        }
+        else if (key == ENTER) {
+            system("cls");
+            setColor(14);
+            cout << "Selected option: " << menuItems[selected] << endl;
+            setColor(7);
+            if (selected == 2) { // Exit
+                running = false;
+            }
+            else if (selected == 0) {
+                new_game();
+
+            }
+            else {
+                system("pause");
+            }
+        }
+    }
+
+
+}
 
 void set_board() {      // Ініціалізація ігрового поля
     
@@ -242,6 +317,46 @@ bool no_move() {            // Перевірка чи є можливі ход�
         }
     }
     return true;  
+}
+
+void new_game() {
+    srand(time(0));
+    set_board();
+    draw_board();
+
+    while (true) {
+
+        if (is_won()) {
+            cout << "You won!\n";
+            break;
+        }
+
+        if (is_full() || no_move()) {
+            cout << "Game over!\n";
+            break;
+        }
+
+        int direct = _getch();
+
+        if (direct == 224)
+            direct = _getch();
+
+        if (direct == RIGHT) {
+            move_right();
+        }
+        else if (direct == LEFT) {
+            move_left();
+        }
+        else if (direct == UP) {
+            move_up();
+        }
+        else if (direct == DOWN) {
+            move_down();
+        }
+
+    }
+
+
 }
 
 
