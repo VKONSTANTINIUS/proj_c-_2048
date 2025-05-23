@@ -4,69 +4,101 @@
 #include <ctime>
 #include <windows.h>
 #include <conio.h>
+#include <fstream>
 
 using namespace std;
 
-enum direction { DOWN = 80, UP = 72, LEFT = 75, RIGHT = 77, ENTER = 13 };
+HANDLE h;
+
+enum direction { DOWN = 80, UP = 72, LEFT = 75, RIGHT = 77, ENTER = 13, ESC = 27 };
 
 const int MENU_SIZE = 3;
-const char* menuItems[MENU_SIZE] = {
-    "New Game",
-    "Save / Load",
-    "Exit"
-};
+const char* menuItems[MENU_SIZE] = { "New Game", "Continue", "Exit" };
 
 const int BOX_SIZE = 4;
 const int WIN_COUNT = 2048;
 int board[BOX_SIZE][BOX_SIZE]{};
 int score = 0;
+  
+void ConsoleSett(); // Функція налаштувань консолі
+void setCursorPos(int x, int y); // Функція налаштування позиції курсора
+void setColor(int color); //Функція вибору кольору тексту
 
-void setCursorPos(int x, int y);
-void setColor(int color);
-void drawFrame(int x, int y, int width, int height, int color);
-void drawMenu(int selected);
-void menu_init();
- 
-void set_board();
-void add_number();
-void draw_board();
-void move_up();
-void move_down();
-void move_left();
-void move_right();
+//Функції для роботи з меню
+void drawFrame(int x, int y, int width, int height, int color); //рамка навколо обраного пункту меню
+void drawMenu(int selected); //вивід ігрового меню
+void menu_init(); // Ініціалізація ігрового меню
 
-bool is_full();
-bool is_won();
-bool no_move();
+//Функції гри
+void set_board(); //Очищення поля (заповнення масиву нулями)
+void add_number(); //Додавання випадкового числа (2 або 4) в комірку зі значенням 0 
+void draw_board(); //Вивід ігрового поля 
+void move_up(); //Рух вгору
+void move_down(); //Рух вниз
+void move_left(); //Рух вліво
+void move_right(); //Рух вправо
 
-void new_game();
+//Логічні функції для визначення стану гри
+bool is_full(); //функція для визначення чи є вільні комірки
+bool is_won(); //функція для перевірки чи досягнуто максимально можливе значення
+bool no_move(); //функція для перевірки чи можливі подальші дії
+
+void new_game(); //функція процесу гри
+
+void autosave(const char* filename); //функція збереження у файл при виході з гри
+void loadsave(const char* filename); //функція завантаження даних з файлу для продовження гри
 
 int main()
 {     
-    
-    menu_init();
-   
+    ConsoleSett();
+    menu_init();  
 
 }
 
-void setCursorPos(int x, int y) {
-    COORD pos = { (SHORT)x, (SHORT)y };
+void ConsoleSett() {                        //Функція налаштувань консолі
+    system("mode con cols=50 lines=20");
+    system("title GAME2048");
+    h = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cci;
+    cci.bVisible = false;
+    cci.dwSize = 100;
+    SetConsoleCursorInfo(h, &cci);
+    system("cls");
+}
+
+void setCursorPos(int x, int y) {       // Функція налаштування позиції курсора
+    COORD pos = { (int)x, (int)y };
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 }
 
-void setColor(int color) {
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+void setColor(int value) {          //Функція вибору кольору тексту
+    h = GetStdHandle(STD_OUTPUT_HANDLE);
+    switch (value) {
+        case 2: SetConsoleTextAttribute(h, 2); break;      // light gray
+        case 4: SetConsoleTextAttribute(h, 11); break;     // light cyan
+        case 8: SetConsoleTextAttribute(h, 14); break;     // yellow
+        case 16: SetConsoleTextAttribute(h, 10); break;    // green
+        case 32: SetConsoleTextAttribute(h, 13); break;    // magenta
+        case 64: SetConsoleTextAttribute(h, 12); break;    // red
+        case 128: SetConsoleTextAttribute(h, 9); break;    // blue
+        case 256: SetConsoleTextAttribute(h, 6); break;    // brown/yellow
+        case 512: SetConsoleTextAttribute(h, 3); break;    // aqua
+        case 1024: SetConsoleTextAttribute(h, 5); break;   // purple
+        case 2048: SetConsoleTextAttribute(h, 15); break;  // white
+        default: SetConsoleTextAttribute(h, 8); break;     // dark gray
+    }
 }
 
-void drawFrame(int x, int y, int width, int height, int color) {
-    setColor(color);
-    for (int i = 0; i < width; i++) {
+
+void drawFrame(int x, int y, int width, int height, int color) {    //рамка навколо обраного пункту меню
+    setColor(8);
+    for (int i = 0; i < width; i++) { //горизонтальний кордон
         setCursorPos(x + i, y);
         cout << char(196);
         setCursorPos(x + i, y + height - 1);
         cout << char(196);
     }
-    for (int i = 0; i < height; i++) {
+    for (int i = 0; i < height; i++) {  //вертикальний кордон
         setCursorPos(x, y + i);
         cout << char(179);
         setCursorPos(x + width - 1, y + i);
@@ -80,10 +112,10 @@ void drawFrame(int x, int y, int width, int height, int color) {
     setColor(7);
 }
 
-void drawMenu(int selected) {
+void drawMenu(int selected) { //вивід ігрового меню
     system("cls");
 
-    int startX = 30;
+    int startX = 10;
     int startY = 10;
     int width = 20;
     int height = 3;
@@ -94,10 +126,10 @@ void drawMenu(int selected) {
 
         if (i == selected) {
             drawFrame(x - 2, y - 1, width, height, 10); // зелена рамка
-            setColor(10);
+            setColor(8);
         }
         else {
-            setColor(7);
+            setColor(2048);
         }
 
         setCursorPos(x, y);
@@ -107,8 +139,8 @@ void drawMenu(int selected) {
     setColor(7);
 }
 
-void menu_init() {
-    int selected = 0;
+void menu_init() { // Ініціалізація ігрового меню
+    int selected = 0; 
     bool running = true;
 
     while (running) {
@@ -117,24 +149,32 @@ void menu_init() {
         int key = _getch();
         if (key == 0 || key == 224) {
             key = _getch();
-            if (key == UP) {
+            if (key == UP) {    // Рух по меню вгору
                 selected = (selected - 1 + MENU_SIZE) % MENU_SIZE;
             }
-            else if (key == DOWN) {
+            else if (key == DOWN) {     // Рух по меню вниз
                 selected = (selected + 1) % MENU_SIZE;
             }
         }
-        else if (key == ENTER) {
+        else if (key == ENTER) {        //Вибір пункту меню
             system("cls");
             setColor(14);
             cout << "Selected option: " << menuItems[selected] << endl;
             setColor(7);
-            if (selected == 2) { // Exit
-                running = false;
+            if (selected == 2) { // Вибрано пункт Вихід
+                system("cls");
+                cout << "ESCAPE!\n";
+                exit(0);
             }
-            else if (selected == 0) {
+            else if (selected == 0) { // Вибрано пункт Нова гра
+                set_board();
                 new_game();
-
+            }
+            else if (selected == 1) { // Вибрано пункт Продовжити гру
+                set_board();
+                loadsave("autosave.txt");
+                new_game();
+                
             }
             else {
                 system("pause");
@@ -175,12 +215,38 @@ void draw_board() {         // Вивід ігрового поля
 
     cout << "Score: " << score << "\n";
 
-    for (int i = 0; i < BOX_SIZE; i++) {
-        for (int j = 0; j < BOX_SIZE; j++) {
-            cout << setw(6) << board[i][j];
-        }
-        cout << "\n\n\n";
+    // Верхня межа
+    cout << char(218);
+    for (int i = 0; i < BOX_SIZE - 1; i++) {
+        cout << string(6, char(196)) << char(194);
     }
+    cout << string(6, char(196)) << char(191) << endl;
+
+    for (int y = 0; y < BOX_SIZE; y++) {
+        cout << char(179);
+        for (int x = 0; x < BOX_SIZE; x++) {
+            setColor(board[y][x]);
+            cout << setw(6) << board[y][x];
+            setColor(2048);
+            cout << char(179);
+        }
+        cout << endl;
+
+        if (y != BOX_SIZE - 1) {
+            cout << char(195);
+            for (int i = 0; i < BOX_SIZE - 1; i++) {
+                cout << string(6, char(196)) << char(197);
+            }
+            cout << string(6, char(196)) << char(180) << endl;
+        }
+    }
+
+    // Нижня межа
+    cout << char(192);
+    for (int i = 0; i < BOX_SIZE - 1; i++) {
+        cout << string(6, char(196)) << char(193);
+    }
+    cout << string(6, char(196)) << char(217) << endl;
 }
 
 void move_up() {            // Рух вгору
@@ -319,22 +385,12 @@ bool no_move() {            // Перевірка чи є можливі ход�
     return true;  
 }
 
-void new_game() {
+void new_game() {       //функція процесу гри
     srand(time(0));
-    set_board();
+   
     draw_board();
 
     while (true) {
-
-        if (is_won()) {
-            cout << "You won!\n";
-            break;
-        }
-
-        if (is_full() || no_move()) {
-            cout << "Game over!\n";
-            break;
-        }
 
         int direct = _getch();
 
@@ -353,10 +409,64 @@ void new_game() {
         else if (direct == DOWN) {
             move_down();
         }
+        else if (direct == ESC) {
+            autosave("autosave.txt");
+            menu_init();
+        }
 
+        if (is_won()) {
+            system("cls");
+            cout << "You won!\n";
+            system("pause");
+            menu_init();
+        }
+
+        if (is_full() || no_move()) {
+            system("cls");
+            cout << "Game over!\n";
+            system("pause");
+            menu_init();
+        }
     }
-
 
 }
 
+void autosave(const char* filename) {
+    ofstream out(filename);
+    if (!out) {
+        cerr << "---" << endl;
+        system("pause");
+        return;
+    }
+
+    for (int y = 0; y < BOX_SIZE; y++) {
+        for (int x = 0; x < BOX_SIZE; x++) {
+            out << board[y][x] << ' ';
+        }
+        out << '\n';
+    }
+
+    out.close();
+    
+}
+
+void loadsave(const char* filename) {
+    ifstream in(filename);
+    if (!in) {
+        system("cls");
+        cerr << "Can't open file" << endl;
+        system("pause");
+        menu_init();
+        return;
+    }
+
+    for (int y = 0; y < BOX_SIZE; y++) {
+        for (int x = 0; x < BOX_SIZE; x++) {
+            in >> board[y][x];
+        }
+    }
+
+    in.close();
+    
+}
 
