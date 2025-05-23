@@ -24,6 +24,7 @@ void ConsoleSett(); // Функція налаштувань консолі
 void setCursorPos(int x, int y); // Функція налаштування позиції курсора
 void setColor(int color); //Функція вибору кольору тексту
 
+
 //Функції для роботи з меню
 void drawFrame(int x, int y, int width, int height, int color); //рамка навколо обраного пункту меню
 void drawMenu(int selected); //вивід ігрового меню
@@ -48,9 +49,12 @@ void new_game(); //функція процесу гри
 void autosave(const char* filename); //функція збереження у файл при виході з гри
 void loadsave(const char* filename); //функція завантаження даних з файлу для продовження гри
 
+void loading();
+
 int main()
 {     
     ConsoleSett();
+    loading();
     menu_init();  
 
 }
@@ -74,6 +78,7 @@ void setCursorPos(int x, int y) {       // Функція налаштуванн
 void setColor(int value) {          //Функція вибору кольору тексту
     h = GetStdHandle(STD_OUTPUT_HANDLE);
     switch (value) {
+        case 1: SetConsoleTextAttribute(h, 48); break;
         case 2: SetConsoleTextAttribute(h, 2); break;      // light gray
         case 4: SetConsoleTextAttribute(h, 11); break;     // light cyan
         case 8: SetConsoleTextAttribute(h, 14); break;     // yellow
@@ -115,8 +120,8 @@ void drawFrame(int x, int y, int width, int height, int color) {    //рамка
 void drawMenu(int selected) { //вивід ігрового меню
     system("cls");
 
-    int startX = 10;
-    int startY = 10;
+    int startX = 2;
+    int startY = 2;
     int width = 20;
     int height = 3;
 
@@ -151,9 +156,11 @@ void menu_init() { // Ініціалізація ігрового меню
             key = _getch();
             if (key == UP) {    // Рух по меню вгору
                 selected = (selected - 1 + MENU_SIZE) % MENU_SIZE;
+                Beep(700, 10);
             }
             else if (key == DOWN) {     // Рух по меню вниз
                 selected = (selected + 1) % MENU_SIZE;
+                Beep(700, 10);
             }
         }
         else if (key == ENTER) {        //Вибір пункту меню
@@ -268,6 +275,7 @@ void move_up() {            // Рух вгору
         }
     }
     add_number();
+    Beep(700, 10);
     draw_board();
 }
 
@@ -290,6 +298,7 @@ void move_down() {          // Рух вниз
         }
     }
     add_number();
+    Beep(700, 10);
     draw_board();
 }
 
@@ -312,6 +321,7 @@ void move_left() {          // Рух вліво
         }
     }
     add_number();
+    Beep(700, 10);
     draw_board();
 }
 
@@ -334,6 +344,7 @@ void move_right() {         // Рух вправо
         }
     }
     add_number();
+    Beep(700, 10);
     draw_board();
 }
 
@@ -468,5 +479,87 @@ void loadsave(const char* filename) {
 
     in.close();
     
+}
+
+void loading() {
+    system("cls");
+    //2
+    for (int i = 0; i < 5; i++) {
+        setCursorPos(2, i);
+        for (int j = 0; j < 4; j++) {
+            if (i == 0 || (i == 1 && j == 3) || i == 2 || (i == 3 && j == 0) || i == 4) {
+                setColor(1);
+                Sleep(10);
+                Beep(700, 10);
+                cout << " ";
+            }
+            else {
+                setColor(2);
+                Sleep(10);
+                cout << " ";
+            }
+        }
+        cout << "\n";
+    }
+    cout << "\n";
+    //0
+    for (int i = 0; i < 5; i++) {
+        setCursorPos(7, i);
+        for (int j = 0; j < 4; j++) {
+            if (i == 0 || i == 4 || j == 0 || j == 3) {
+                setColor(1);
+                Sleep(10);
+                Beep(700, 10);
+                cout << " ";
+            }
+            else {
+                setColor(2);
+                Sleep(10);
+                cout << " ";
+            }
+
+        }
+        cout << "\n";
+    }
+    //4
+    for (int i = 0; i < 5; i++) {
+        setCursorPos(12, i);
+        for (int j = 0; j < 4; j++) {
+            if ((i == 0 && (j == 0 || j == 3)) || (i == 1 && (j == 0 || j == 3)) ||
+                i == 2 || (i == 3 && j == 3) || (i == 4 && j == 3)) {
+                setColor(1);
+                Sleep(10);
+                Beep(700, 10);
+                cout << " ";
+            }
+            else {
+                setColor(2);
+                Sleep(10);
+                cout << " ";
+            }
+        }
+        cout << "\n";
+    }
+    //8
+    for (int i = 0; i < 5; i++) {
+        setCursorPos(17, i);
+        for (int j = 0; j < 4; j++) {
+            if (i == 0 || (i == 1 && (j == 0 || j == 3)) ||
+                i == 2 || (i == 3 && (j == 0 || j == 3)) || i == 4) {
+                setColor(1);
+                Sleep(10);
+                Beep(700, 10);
+                cout << " ";
+            }
+            else {
+                setColor(2);
+                Sleep(10);
+                cout << " ";
+            }
+        }
+        cout << "\n";
+    }
+    setColor(2);
+    system("pause");
 }
 
